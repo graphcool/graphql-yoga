@@ -117,7 +117,7 @@ export interface Props<
     [name: string]: typeof SchemaDirectiveVisitor
   }
   typeDefs?: ITypeDefinitions
-  resolvers?: IResolvers
+  resolvers?: IResolvers | Array<IResolvers>
   resolverValidationOptions?: IResolverValidationOptions
   schema?: GraphQLSchema
   context?: Context | ContextCallback
@@ -135,7 +135,7 @@ export interface LambdaProps {
     [name: string]: typeof SchemaDirectiveVisitor
   }
   typeDefs?: string
-  resolvers?: IResolvers
+  resolvers?: IResolvers | Array<IResolvers>
   schema?: GraphQLSchema
   context?: Context | ContextCallback
   options?: LambdaOptions

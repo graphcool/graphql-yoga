@@ -76,6 +76,7 @@ export class GraphQLServer {
     subscriptions: '/',
     playground: '/',
     getEndpoint: false,
+    playgroundSettings: null
   }
   executableSchema: GraphQLSchema
   context: any
@@ -343,6 +344,7 @@ export class GraphQLServer {
               },
             ]
           : undefined,
+        settings: this.options.playgroundSettings,
       }
 
       app.get(this.options.playground, expressPlayground(playgroundOptions))

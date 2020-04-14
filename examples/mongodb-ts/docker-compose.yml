@@ -1,0 +1,16 @@
+version: "3"
+services:
+  db:
+    image: "bitnami/mongodb:latest"
+    ports:
+      - '27017:27017'
+    networks:
+      - net
+    environment:
+      MONGODB_USERNAME: User
+      MONGODB_PASSWORD: pwd1234
+      MONGODB_DATABASE: graphqlyoga
+    volumes:
+      - './containers/mongo:/data/db'
+networks:
+  net:

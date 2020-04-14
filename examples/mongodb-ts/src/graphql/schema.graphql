@@ -1,0 +1,16 @@
+type Query {
+  posts: [Post!]!
+}
+
+type Mutation {
+  createPost(title: String!, desc: String!, author: String!): Boolean!
+}
+
+# Schema Types
+type Post {
+  id: String!
+  title: String!
+  desc: String!
+  author: String!
+  createdOn: String!
+}

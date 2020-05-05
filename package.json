@@ -54,7 +54,7 @@
     "graphql-playground-middleware-lambda": "1.7.12",
     "graphql-subscriptions": "^0.5.8",
     "graphql-tools": "^4.0.0",
-    "graphql-upload": "^8.0.0",
+    "graphql-upload": "^10.0.0",
     "subscriptions-transport-ws": "^0.9.8"
   },
   "devDependencies": {

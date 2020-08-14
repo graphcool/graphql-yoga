@@ -1,15 +1,13 @@
-import test, { TestContext, Context } from 'ava'
+import test from 'ava'
 import { inflate } from 'graphql-deduplicator'
 import { GraphQLServer, Options } from './index'
 import { promisify } from 'util'
 import { middleware } from 'graphql-middleware'
+import { AddressInfo } from 'net'
 import * as request from 'request-promise-native'
 
-async function startServer(t: TestContext & Context<any>, options?: Options) {
-  const randomId = () =>
-    Math.random()
-      .toString(36)
-      .substr(2, 5)
+async function startServer(t, options?: Options) {
+  const randomId = () => Math.random().toString(36).substr(2, 5)
 
   const typeDefs = `
     type Author {
@@ -51,7 +49,7 @@ async function startServer(t: TestContext & Context<any>, options?: Options) {
 
   const server = new GraphQLServer({ typeDefs, resolvers })
   const http = await server.start({ port: 0, ...options })
-  const { port } = http.address()
+  const { port } = http.address() as AddressInfo
   const uri = `http://localhost:${port}/`
 
   if (t.context.httpServers) {
@@ -66,17 +64,17 @@ async function startServer(t: TestContext & Context<any>, options?: Options) {
   return t.context
 }
 
-test.afterEach.always('stop graphql servers', async t => {
-  const { httpServers } = t.context
+test.afterEach.always('stop graphql servers', async (t) => {
+  const httpServers = (t.context as any).httpServers;
 
   if (httpServers && httpServers.length) {
     await Promise.all(
-      httpServers.map(server => promisify(server.close).call(server)),
+      httpServers.map((server) => promisify(server.close).call(server)),
     )
   }
 })
 
-test('works with simple hello world server', async t => {
+test('works with simple hello world server', async (t) => {
   const { uri } = await startServer(t)
 
   const query = `
@@ -99,7 +97,7 @@ test('works with simple hello world server', async t => {
   })
 })
 
-test('Response data can be deduplicated with graphql-deduplicator', async t => {
+test('Response data can be deduplicated with graphql-deduplicator', async (t) => {
   const {
     uri,
     data: { book },
@@ -159,7 +157,7 @@ test('Response data can be deduplicated with graphql-deduplicator', async t => {
   t.deepEqual(body.data, inflate(deduplicated.data))
 })
 
-test('graphql-deduplicated can be completely disabled', async t => {
+test('graphql-deduplicated can be completely disabled', async (t) => {
   const {
     uri,
     data: { book },
@@ -200,7 +198,7 @@ test('graphql-deduplicated can be completely disabled', async t => {
   })
 })
 
-test('Works with graphql-middleware', async t => {
+test('Works with graphql-middleware', async (t) => {
   const typeDefs = `
     type Book {
       id: ID!
@@ -233,7 +231,7 @@ test('Works with graphql-middleware', async t => {
     middlewares: [middleware],
   })
   const http = await server.start({ port: 0 })
-  const { port } = http.address()
+  const { port } = http.address() as AddressInfo
   const uri = `http://localhost:${port}/`
 
   const query = `
@@ -264,7 +262,7 @@ test('Works with graphql-middleware', async t => {
   })
 })
 
-test('Works with graphql-middleware generator.', async t => {
+test('Works with graphql-middleware generator.', async (t) => {
   const typeDefs = `
     type Book {
       id: ID!
@@ -287,7 +285,7 @@ test('Works with graphql-middleware generator.', async t => {
     },
   }
 
-  const middlewareGenerator = middleware(schema => {
+  const middlewareGenerator = middleware((schema) => {
     return async (resolve, parent, args, ctx, info) => {
       return 'pass'
     }
@@ -299,7 +297,7 @@ test('Works with graphql-middleware generator.', async t => {
     middlewares: [middlewareGenerator],
   })
   const http = await server.start({ port: 0 })
-  const { port } = http.address()
+  const { port } = http.address() as AddressInfo
   const uri = `http://localhost:${port}/`
 
   const query = `
@@ -330,7 +328,7 @@ test('Works with graphql-middleware generator.', async t => {
   })
 })
 
-test('Works with array of resolvers', async t => {
+test('Works with array of resolvers', async (t) => {
   const typeDefs = `
     type Book {
       id: ID!
@@ -355,13 +353,13 @@ test('Works with array of resolvers', async t => {
 
   const bookIdResolver = {
     Book: {
-      id: root => `book-${root.id}`,
+      id: (root) => `book-${root.id}`,
     },
   }
 
   const bookNameResolver = {
     Book: {
-      name: root => `book-${root.name}`,
+      name: (root) => `book-${root.name}`,
     },
   }
 
@@ -371,7 +369,7 @@ test('Works with array of resolvers', async t => {
     middlewares: [],
   })
   const http = await server.start({ port: 0 })
-  const { port } = http.address()
+  const { port } = http.address() as AddressInfo
   const uri = `http://localhost:${port}/`
 
   const query = `

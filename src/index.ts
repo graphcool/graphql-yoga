@@ -34,6 +34,7 @@ import { createServer, Server as HttpServer } from 'http'
 import { createServer as createHttpsServer, Server as HttpsServer } from 'https'
 import * as path from 'path'
 import { SubscriptionServer } from 'subscriptions-transport-ws'
+import { AddressInfo } from 'net'
 
 import {
   SubscriptionServerOptions,
@@ -365,14 +366,14 @@ export class GraphQLServer {
 
   start(
     options: Options,
-    callback?: ((options: Options) => void),
+    callback?: (options: Options) => void,
   ): Promise<HttpServer | HttpsServer>
   start(
-    callback?: ((options: Options) => void),
+    callback?: (options: Options) => void,
   ): Promise<HttpServer | HttpsServer>
   start(
     optionsOrCallback?: Options | ((options: Options) => void),
-    callback?: ((options: Options) => void),
+    callback?: (options: Options) => void,
   ): Promise<HttpServer | HttpsServer> {
     const options =
       optionsOrCallback && typeof optionsOrCallback === 'function'
@@ -381,20 +382,21 @@ export class GraphQLServer {
     const callbackFunc = callback
       ? callback
       : optionsOrCallback && typeof optionsOrCallback === 'function'
-        ? optionsOrCallback
-        : () => null
+      ? optionsOrCallback
+      : () => null
 
     const server = this.createHttpServer(options as Options)
 
     return new Promise((resolve, reject) => {
       const combinedServer = server
-      const port = typeof this.options.port !== "number" 
-        ? parseInt(this.options.port) 
-        : this.options.port
+      const port =
+        typeof this.options.port !== 'number'
+          ? parseInt(this.options.port, 10)
+          : this.options.port
       combinedServer.listen(port, this.options.host, () => {
         callbackFunc({
           ...this.options,
-          port: combinedServer.address().port,
+          port: (combinedServer.address() as AddressInfo).port,
         })
         resolve(combinedServer)
       })
@@ -416,7 +418,7 @@ export class GraphQLServer {
           // The following should be replaced when SubscriptionServer accepts a formatError
           // parameter for custom error formatting.
           // See https://github.com/apollographql/subscriptions-transport-ws/issues/182
-          connection.formatResponse = value => ({
+          connection.formatResponse = (value) => ({
             ...value,
             errors:
               value.errors &&

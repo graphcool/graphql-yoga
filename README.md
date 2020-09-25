@@ -30,7 +30,7 @@ Fully-featured GraphQL Server with focus on easy setup, performance & great deve
 * Schema directives
 * Apollo Tracing
 * Accepts both `application/json` and `application/graphql` content-types
-* Runs everywhere: Can be deployed via `now`, `up`, AWS Lambda, Heroku etc.
+* Runs everywhere: Can be deployed via `vercel`, `up`, AWS Lambda, Heroku etc.
 * Supports middleware out of the box.
 
 ## Install
@@ -206,13 +206,13 @@ Once your `graphql-yoga` server is running, you can use [GraphQL Playground](htt
 
 ## Deployment
 
-### `now`
+### `vercel` (formerly `now`)
+ 
+To deploy your `graphql-yoga` server with [`vercel`](https://vercel.com/home), follow these instructions:
 
-To deploy your `graphql-yoga` server with [`now`](https://zeit.co/now), follow these instructions:
-
-1.  Download [**Now Desktop**](https://zeit.co/download)
+1.  Download [**Vercel Desktop**](https://vercel.com/download)
 2.  Navigate to the root directory of your `graphql-yoga` server
-3.  Run `now` in your terminal
+3.  Run `vercel` in your terminal
 
 ### Heroku
 

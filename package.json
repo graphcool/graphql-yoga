@@ -41,7 +41,7 @@
     "@types/graphql-deduplicator": "^2.0.0",
     "@types/zen-observable": "^0.5.3",
     "apollo-server-express": "^1.3.6",
-    "apollo-server-lambda": "1.3.6",
+    "apollo-server-lambda": "2.14.2",
     "apollo-upload-server": "^7.0.0",
     "body-parser-graphql": "1.1.0",
     "cors": "^2.8.4",

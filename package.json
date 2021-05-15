@@ -51,7 +51,7 @@
     "graphql-import": "^0.7.0",
     "graphql-middleware": "4.0.1",
     "graphql-playground-middleware-express": "1.7.11",
-    "graphql-playground-middleware-lambda": "1.7.12",
+    "graphql-playground-middleware-lambda": "1.7.23",
     "graphql-subscriptions": "^0.5.8",
     "graphql-tools": "^4.0.0",
     "graphql-upload": "^8.0.0",

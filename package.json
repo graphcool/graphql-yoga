@@ -34,7 +34,7 @@
     "files": ["dist/**/*.test.js"]
   },
   "dependencies": {
-    "@types/aws-lambda": "8.10.13",
+    "@types/aws-lambda": "8.10.77",
     "@types/cors": "^2.8.4",
     "@types/express": "^4.11.1",
     "@types/graphql": "^14.0.0",

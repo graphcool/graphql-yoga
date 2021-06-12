@@ -4300,9 +4300,10 @@ tslint-config-prettier@1.12.0:
   resolved "https://registry.yarnpkg.com/tslint-config-prettier/-/tslint-config-prettier-1.12.0.tgz#bc8504f286ecf42b906f3d1126a093114f5729cc"
   integrity sha512-7zugK8NWpoDPYT6UNGLDGpQOhk0CSodjkyrTNiHOCjwIAleYKlyQunxpsSXBIoGEs/kFVppd6YzZeQZtrJnyRg==
 
-tslint-config-standard@7.1.0:
-  version "7.1.0"
-  resolved "https://registry.yarnpkg.com/tslint-config-standard/-/tslint-config-standard-7.1.0.tgz#6bcc435a179478e365f6cc62312a561221985760"
+tslint-config-standard@9.0.0:
+  version "9.0.0"
+  resolved "https://registry.yarnpkg.com/tslint-config-standard/-/tslint-config-standard-9.0.0.tgz#349a94819d93d5f8d803e3c71cb58ef38eff88e0"
+  integrity sha512-CAw9J743RnPMemQV/XQ4YyNreC+A1NItACfkm+cBedrOkz6CQfwlnbKn8anUXBfoa4Zo4tjAhblRbsMNcSLfSw==
   dependencies:
     tslint-eslint-rules "^5.3.1"
 

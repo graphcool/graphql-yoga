@@ -55,10 +55,13 @@
     "graphql-subscriptions": "^0.5.8",
     "graphql-tools": "^4.0.0",
     "graphql-upload": "^8.0.0",
-    "subscriptions-transport-ws": "^0.9.8"
+    "graphql-ws": "^5.1.2",
+    "subscriptions-transport-ws": "^0.9.8",
+    "ws": "^7.4.5"
   },
   "devDependencies": {
     "@types/request-promise-native": "1.0.15",
+    "@types/ws": "^7.4.4",
     "ava": "0.25.0",
     "aws-lambda": "^0.1.2",
     "npm-run-all": "4.1.3",

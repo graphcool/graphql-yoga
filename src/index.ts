@@ -33,7 +33,10 @@ import {
 import { createServer, Server as HttpServer } from 'http'
 import { createServer as createHttpsServer, Server as HttpsServer } from 'https'
 import * as path from 'path'
-import { SubscriptionServer } from 'subscriptions-transport-ws'
+import { SubscriptionServer, GRAPHQL_WS } from 'subscriptions-transport-ws'
+import * as ws from 'ws'
+import { GRAPHQL_TRANSPORT_WS_PROTOCOL } from 'graphql-ws'
+import { useServer as useWSServer } from 'graphql-ws/lib/use/ws'
 
 import {
   SubscriptionServerOptions,
@@ -66,13 +69,13 @@ type ExecuteFunction = (
 
 export class GraphQLServer {
   express: express.Application
-  subscriptionServer: SubscriptionServer | null
   subscriptionServerOptions: SubscriptionServerOptions | null = null
   options: Options = {
     tracing: { mode: 'http-header' },
     port: process.env.PORT || 4000,
     deduplicator: true,
     endpoint: '/',
+    subscriptionsProtocol: 'both',
     subscriptions: '/',
     playground: '/',
     getEndpoint: false,
@@ -92,7 +95,6 @@ export class GraphQLServer {
   constructor(props: Props) {
     this.express = express()
 
-    this.subscriptionServer = null
     this.context = props.context
 
     if (props.schema) {
@@ -357,7 +359,7 @@ export class GraphQLServer {
       : createServer(app)
 
     if (this.subscriptionServerOptions) {
-      this.createSubscriptionServer(server)
+      this.createSubscriptionServer(server, this.options.subscriptionsProtocol)
     }
 
     return server
@@ -401,49 +403,125 @@ export class GraphQLServer {
     })
   }
 
-  private createSubscriptionServer(combinedServer: HttpServer | HttpsServer) {
-    this.subscriptionServer = SubscriptionServer.create(
-      {
-        schema: this.executableSchema,
-        // TODO remove once `@types/graphql` is fixed for `execute`
-        execute: execute as ExecuteFunction,
-        subscribe,
-        onConnect: this.subscriptionServerOptions.onConnect
-          ? this.subscriptionServerOptions.onConnect
-          : async (connectionParams, webSocket) => ({ ...connectionParams }),
-        onDisconnect: this.subscriptionServerOptions.onDisconnect,
-        onOperation: async (message, connection, webSocket) => {
-          // The following should be replaced when SubscriptionServer accepts a formatError
-          // parameter for custom error formatting.
-          // See https://github.com/apollographql/subscriptions-transport-ws/issues/182
-          connection.formatResponse = value => ({
-            ...value,
-            errors:
-              value.errors &&
-              value.errors.map(
-                this.options.formatError || defaultErrorFormatter,
-              ),
-          })
+  private createSubscriptionServer(
+    combinedServer: HttpServer | HttpsServer,
+    subProto: Options['subscriptionsProtocol'],
+  ) {
+    if (!['both', 'legacy', 'current'].includes(subProto)) {
+      throw new Error(`Unsupported subscriptions server version "${subProto}"`)
+    }
 
-          let context
-          try {
-            context =
-              typeof this.context === 'function'
-                ? await this.context({ connection })
-                : this.context
-          } catch (e) {
-            console.error(e)
-            throw e
-          }
-          return { ...connection, context }
+    let legacyServer: ws.Server | undefined
+    let currentServer: ws.Server | undefined
+
+    // subscriptions-transport-ws
+    if (subProto === 'both' || subProto === 'legacy') {
+      legacyServer = SubscriptionServer.create(
+        {
+          schema: this.executableSchema,
+          // TODO remove once `@types/graphql` is fixed for `execute`
+          execute: execute as ExecuteFunction,
+          subscribe,
+          onConnect: this.subscriptionServerOptions.onConnect
+            ? this.subscriptionServerOptions.onConnect
+            : async (connectionParams, webSocket) => ({ ...connectionParams }),
+          onDisconnect: this.subscriptionServerOptions.onDisconnect,
+          onOperation: async (message, connection, webSocket) => {
+            // The following should be replaced when SubscriptionServer accepts a formatError
+            // parameter for custom error formatting.
+            // See https://github.com/apollographql/subscriptions-transport-ws/issues/182
+            connection.formatResponse = value => ({
+              ...value,
+              errors:
+                value.errors &&
+                value.errors.map(
+                  this.options.formatError || defaultErrorFormatter,
+                ),
+            })
+
+            let context
+            try {
+              context =
+                typeof this.context === 'function'
+                  ? await this.context({ connection })
+                  : this.context
+            } catch (e) {
+              console.error(e)
+              throw e
+            }
+            return { ...connection, context }
+          },
+          keepAlive: this.subscriptionServerOptions.keepAlive,
         },
-        keepAlive: this.subscriptionServerOptions.keepAlive,
-      },
-      {
-        server: combinedServer,
-        path: this.subscriptionServerOptions.path,
-      },
-    )
+        { noServer: true },
+      ).server
+    }
+
+    // graphql-ws
+    if (subProto === 'both' || subProto === 'current') {
+      currentServer = new ws.Server({ noServer: true })
+      useWSServer(
+        {
+          schema: this.executableSchema,
+          onConnect: this.subscriptionServerOptions.onConnect
+            ? () => this.subscriptionServerOptions.onConnect()
+            : undefined,
+          context: (ctx, msg, args) =>
+            typeof this.context === 'function'
+              ? this.context({ ctx, msg, args })
+              : this.context,
+          // operation execution errors
+          onNext: (_ctx, _msg, _args, result) => {
+            if (result.errors) {
+              result.errors = result.errors.map(
+                (this.options.formatError || defaultErrorFormatter) as any, // format your errors however you wish, hence 'as any'
+              )
+            }
+          },
+          // validation errors
+          onError: (_ctx, _msg, errors) =>
+            errors.map(
+              (this.options.formatError || defaultErrorFormatter) as any, // format your errors however you wish, hence 'as any'
+            ),
+          // NOTE: we use the `onClose` here because it is synonymous to `onDisconnect` in 'subscriptions-transport-ws'.
+          // Read about the differences here: https://github.com/enisdenjo/graphql-ws/issues/91#issuecomment-759363519
+          onClose: this.subscriptionServerOptions.onDisconnect
+            ? () => this.subscriptionServerOptions.onDisconnect()
+            : undefined,
+        },
+        currentServer,
+        this.subscriptionServerOptions.keepAlive,
+      )
+    }
+
+    // listen for upgrades and delegate requests according to the WS subprotocol
+    combinedServer.on('upgrade', (req, socket, head) => {
+      if (req.url !== this.subscriptionServerOptions.path) {
+        // TODO-db-210515 gracefully handle upgrade request on wrong subscriptions path?
+        socket.destroy()
+        return
+      }
+
+      // extract websocket subprotocol from header
+      const protocol = req.headers['sec-websocket-protocol'] || ''
+      const protocols = Array.isArray(protocol)
+        ? protocol
+        : protocol.split(',').map(p => p.trim())
+
+      // decide which websocket server to use
+      const wss =
+        !currentServer ||
+        (protocols.includes(GRAPHQL_WS) && // subscriptions-transport-ws subprotocol
+          !protocols.includes(GRAPHQL_TRANSPORT_WS_PROTOCOL)) // graphql-ws subprotocol
+          ? legacyServer
+          : // graphql-ws will welcome its own subprotocol and
+            // gracefully reject invalid ones. if the client supports
+            // both transports, graphql-ws will prevail
+            currentServer
+      wss.handleUpgrade(req, socket, head, ws => {
+        wss.emit('connection', ws, req)
+      })
+    })
   }
 }
 
